@@ -1,29 +1,519 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<UI version="4.0" >
- <class>mdeClass</class>
- <widget class="QMainWindow" name="mdeClass" >
-  <property name="objectName" >
-   <string notr="true">mdeClass</string>
-  </property>
-  <property name="geometry" >
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>600</width>
-    <height>400</height>
-   </rect>
-  </property>
-  <property name="windowTitle" >
-   <string>mde</string>
-  </property>  <widget class="QMenuBar" name="menuBar" />
-  <widget class="QToolBar" name="mainToolBar" />
-  <widget class="QWidget" name="centralWidget" />
-  <widget class="QStatusBar" name="statusBar" />
- </widget>
- <layoutDefault spacing="6" margin="11" />
- <pixmapfunction></pixmapfunction>
- <resources>
-   <include location="mde.qrc"/>
- </resources>
- <connections/>
-</UI>
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>mdeClass</class>
+ <widget class="QMainWindow" name="mdeClass">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1280</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MDE - Markdown 编辑器</string>
+  </property>
+
+  <!-- ========== Actions：文件 ========== -->
+  <action name="actionNew">
+   <property name="text"><string>新建(&amp;N)</string></property>
+   <property name="shortcut"><string>Ctrl+N</string></property>
+   <property name="toolTip"><string>新建文件</string></property>
+  </action>
+  <action name="actionOpen">
+   <property name="text"><string>打开(&amp;O)...</string></property>
+   <property name="shortcut"><string>Ctrl+O</string></property>
+   <property name="toolTip"><string>打开文件</string></property>
+  </action>
+  <action name="actionSave">
+   <property name="text"><string>保存(&amp;S)</string></property>
+   <property name="shortcut"><string>Ctrl+S</string></property>
+   <property name="toolTip"><string>保存文件</string></property>
+  </action>
+  <action name="actionSaveAs">
+   <property name="text"><string>另存为(&amp;A)...</string></property>
+   <property name="shortcut"><string>Ctrl+Shift+S</string></property>
+   <property name="toolTip"><string>另存为</string></property>
+  </action>
+  <action name="actionExportHTML">
+   <property name="text"><string>导出 HTML...</string></property>
+   <property name="toolTip"><string>导出为 HTML 文件</string></property>
+  </action>
+  <action name="actionExportPDF">
+   <property name="text"><string>导出 PDF...</string></property>
+   <property name="toolTip"><string>导出为 PDF 文件</string></property>
+  </action>
+  <action name="actionClose">
+   <property name="text"><string>关闭(&amp;W)</string></property>
+   <property name="shortcut"><string>Ctrl+W</string></property>
+  </action>
+  <action name="actionExit">
+   <property name="text"><string>退出(&amp;Q)</string></property>
+   <property name="shortcut"><string>Alt+F4</string></property>
+  </action>
+
+  <!-- ========== Actions：编辑 ========== -->
+  <action name="actionUndo">
+   <property name="text"><string>撤销(&amp;Z)</string></property>
+   <property name="shortcut"><string>Ctrl+Z</string></property>
+  </action>
+  <action name="actionRedo">
+   <property name="text"><string>重做(&amp;Y)</string></property>
+   <property name="shortcut"><string>Ctrl+Y</string></property>
+  </action>
+  <action name="actionCut">
+   <property name="text"><string>剪切(&amp;X)</string></property>
+   <property name="shortcut"><string>Ctrl+X</string></property>
+  </action>
+  <action name="actionCopy">
+   <property name="text"><string>复制(&amp;C)</string></property>
+   <property name="shortcut"><string>Ctrl+C</string></property>
+  </action>
+  <action name="actionPaste">
+   <property name="text"><string>粘贴(&amp;V)</string></property>
+   <property name="shortcut"><string>Ctrl+V</string></property>
+  </action>
+  <action name="actionSelectAll">
+   <property name="text"><string>全选(&amp;A)</string></property>
+   <property name="shortcut"><string>Ctrl+A</string></property>
+  </action>
+  <action name="actionFind">
+   <property name="text"><string>查找(&amp;F)...</string></property>
+   <property name="shortcut"><string>Ctrl+F</string></property>
+  </action>
+  <action name="actionReplace">
+   <property name="text"><string>替换(&amp;R)...</string></property>
+   <property name="shortcut"><string>Ctrl+H</string></property>
+  </action>
+
+  <!-- ========== Actions：格式 ========== -->
+  <action name="actionBold">
+   <property name="text"><string>加粗(&amp;B)</string></property>
+   <property name="shortcut"><string>Ctrl+B</string></property>
+   <property name="toolTip"><string>加粗 (Ctrl+B)</string></property>
+   <property name="checkable"><bool>true</bool></property>
+  </action>
+  <action name="actionItalic">
+   <property name="text"><string>斜体(&amp;I)</string></property>
+   <property name="shortcut"><string>Ctrl+I</string></property>
+   <property name="toolTip"><string>斜体 (Ctrl+I)</string></property>
+   <property name="checkable"><bool>true</bool></property>
+  </action>
+  <action name="actionStrikethrough">
+   <property name="text"><string>删除线</string></property>
+   <property name="shortcut"><string>Ctrl+Shift+X</string></property>
+   <property name="toolTip"><string>删除线 (Ctrl+Shift+X)</string></property>
+  </action>
+  <action name="actionInlineCode">
+   <property name="text"><string>行内代码</string></property>
+   <property name="toolTip"><string>行内代码</string></property>
+  </action>
+  <action name="actionHeading1">
+   <property name="text"><string>标题 1</string></property>
+   <property name="shortcut"><string>Ctrl+1</string></property>
+   <property name="toolTip"><string>标题 1 (Ctrl+1)</string></property>
+  </action>
+  <action name="actionHeading2">
+   <property name="text"><string>标题 2</string></property>
+   <property name="shortcut"><string>Ctrl+2</string></property>
+   <property name="toolTip"><string>标题 2 (Ctrl+2)</string></property>
+  </action>
+  <action name="actionHeading3">
+   <property name="text"><string>标题 3</string></property>
+   <property name="shortcut"><string>Ctrl+3</string></property>
+   <property name="toolTip"><string>标题 3 (Ctrl+3)</string></property>
+  </action>
+  <action name="actionHeading4">
+   <property name="text"><string>标题 4</string></property>
+   <property name="shortcut"><string>Ctrl+4</string></property>
+  </action>
+  <action name="actionHeading5">
+   <property name="text"><string>标题 5</string></property>
+   <property name="shortcut"><string>Ctrl+5</string></property>
+  </action>
+  <action name="actionHeading6">
+   <property name="text"><string>标题 6</string></property>
+   <property name="shortcut"><string>Ctrl+6</string></property>
+  </action>
+  <action name="actionBulletList">
+   <property name="text"><string>无序列表</string></property>
+   <property name="shortcut"><string>Ctrl+Shift+U</string></property>
+   <property name="toolTip"><string>无序列表 (Ctrl+Shift+U)</string></property>
+  </action>
+  <action name="actionOrderedList">
+   <property name="text"><string>有序列表</string></property>
+   <property name="shortcut"><string>Ctrl+Shift+O</string></property>
+   <property name="toolTip"><string>有序列表 (Ctrl+Shift+O)</string></property>
+  </action>
+  <action name="actionTaskList">
+   <property name="text"><string>任务列表</string></property>
+   <property name="shortcut"><string>Ctrl+Shift+C</string></property>
+   <property name="toolTip"><string>任务列表 (Ctrl+Shift+C)</string></property>
+  </action>
+  <action name="actionBlockquote">
+   <property name="text"><string>引用块</string></property>
+   <property name="shortcut"><string>Ctrl+Shift+Q</string></property>
+   <property name="toolTip"><string>引用块 (Ctrl+Shift+Q)</string></property>
+  </action>
+  <action name="actionCodeBlock">
+   <property name="text"><string>代码块</string></property>
+   <property name="shortcut"><string>Ctrl+Shift+K</string></property>
+   <property name="toolTip"><string>代码块 (Ctrl+Shift+K)</string></property>
+  </action>
+  <action name="actionInsertLink">
+   <property name="text"><string>插入链接</string></property>
+   <property name="shortcut"><string>Ctrl+K</string></property>
+   <property name="toolTip"><string>插入链接 (Ctrl+K)</string></property>
+  </action>
+  <action name="actionInsertImage">
+   <property name="text"><string>插入图片</string></property>
+   <property name="shortcut"><string>Ctrl+Shift+I</string></property>
+   <property name="toolTip"><string>插入图片 (Ctrl+Shift+I)</string></property>
+  </action>
+  <action name="actionInsertTable">
+   <property name="text"><string>插入表格</string></property>
+   <property name="shortcut"><string>Ctrl+Shift+T</string></property>
+   <property name="toolTip"><string>插入表格 (Ctrl+Shift+T)</string></property>
+  </action>
+  <action name="actionHorizontalRule">
+   <property name="text"><string>分隔线</string></property>
+   <property name="toolTip"><string>插入分隔线</string></property>
+  </action>
+
+  <!-- ========== Actions：视图 ========== -->
+  <action name="actionToggleSidebar">
+   <property name="text"><string>切换侧边栏</string></property>
+   <property name="shortcut"><string>Ctrl+\</string></property>
+   <property name="toolTip"><string>显示/隐藏侧边栏</string></property>
+   <property name="checkable"><bool>true</bool></property>
+   <property name="checked"><bool>true</bool></property>
+  </action>
+  <action name="actionTogglePreview">
+   <property name="text"><string>切换预览</string></property>
+   <property name="shortcut"><string>Ctrl+Shift+P</string></property>
+   <property name="toolTip"><string>显示/隐藏预览面板</string></property>
+   <property name="checkable"><bool>true</bool></property>
+   <property name="checked"><bool>true</bool></property>
+  </action>
+  <action name="actionFocusMode">
+   <property name="text"><string>焦点模式</string></property>
+   <property name="shortcut"><string>F11</string></property>
+   <property name="toolTip"><string>焦点模式（隐藏侧栏和预览）</string></property>
+   <property name="checkable"><bool>true</bool></property>
+  </action>
+  <action name="actionFullscreen">
+   <property name="text"><string>全屏</string></property>
+   <property name="shortcut"><string>F12</string></property>
+   <property name="checkable"><bool>true</bool></property>
+  </action>
+  <action name="actionZoomIn">
+   <property name="text"><string>放大</string></property>
+   <property name="shortcut"><string>Ctrl+=</string></property>
+  </action>
+  <action name="actionZoomOut">
+   <property name="text"><string>缩小</string></property>
+   <property name="shortcut"><string>Ctrl+-</string></property>
+  </action>
+  <action name="actionZoomReset">
+   <property name="text"><string>重置缩放</string></property>
+   <property name="shortcut"><string>Ctrl+0</string></property>
+  </action>
+
+  <!-- ========== Actions：帮助 ========== -->
+  <action name="actionShortcuts">
+   <property name="text"><string>快捷键说明</string></property>
+   <property name="shortcut"><string>Ctrl+/</string></property>
+  </action>
+  <action name="actionAbout">
+   <property name="text"><string>关于 MDE</string></property>
+  </action>
+
+  <!-- ========== 中央区域：编辑器 + 预览 ========== -->
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="centralLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin"><number>0</number></property>
+    <property name="topMargin"><number>0</number></property>
+    <property name="rightMargin"><number>0</number></property>
+    <property name="bottomMargin"><number>0</number></property>
+    <item>
+     <!-- 编辑区 / 预览区水平分割 -->
+     <widget class="QSplitter" name="editorSplitter">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <!-- 编辑器 -->
+      <widget class="QPlainTextEdit" name="editorWidget">
+       <property name="font">
+        <font>
+         <family>Consolas</family>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="lineWrapMode">
+        <enum>QPlainTextEdit::WidgetWidth</enum>
+       </property>
+       <property name="placeholderText">
+        <string>在此输入 Markdown 内容...</string>
+       </property>
+      </widget>
+      <!-- 预览区 -->
+      <widget class="QTextBrowser" name="previewWidget">
+       <property name="openExternalLinks">
+        <bool>true</bool>
+       </property>
+       <property name="openLinks">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+
+  <!-- ========== 左侧 Dock：侧边栏 ========== -->
+  <widget class="QDockWidget" name="sidebarDock">
+   <property name="windowTitle">
+    <string>侧边栏</string>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="sidebarContents">
+    <layout class="QVBoxLayout" name="sidebarLayout">
+     <property name="spacing"><number>0</number></property>
+     <property name="leftMargin"><number>0</number></property>
+     <property name="topMargin"><number>0</number></property>
+     <property name="rightMargin"><number>0</number></property>
+     <property name="bottomMargin"><number>0</number></property>
+     <item>
+      <widget class="QTabWidget" name="sidebarTabWidget">
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
+       <property name="tabPosition">
+        <enum>QTabWidget::North</enum>
+       </property>
+       <!-- Tab：文件树 -->
+       <widget class="QWidget" name="fileTab">
+        <attribute name="title">
+         <string>文件</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="fileTabLayout">
+         <property name="spacing"><number>2</number></property>
+         <property name="leftMargin"><number>0</number></property>
+         <property name="topMargin"><number>4</number></property>
+         <property name="rightMargin"><number>0</number></property>
+         <property name="bottomMargin"><number>0</number></property>
+         <item>
+          <widget class="QLineEdit" name="fileSearchEdit">
+           <property name="placeholderText">
+            <string>搜索文件...</string>
+           </property>
+           <property name="clearButtonEnabled">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTreeWidget" name="fileTreeWidget">
+           <property name="headerHidden">
+            <bool>true</bool>
+           </property>
+           <property name="alternatingRowColors">
+            <bool>true</bool>
+           </property>
+           <column>
+            <property name="text"><string>文件名</string></property>
+           </column>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <!-- Tab：大纲 -->
+       <widget class="QWidget" name="outlineTab">
+        <attribute name="title">
+         <string>大纲</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="outlineTabLayout">
+         <property name="spacing"><number>0</number></property>
+         <property name="leftMargin"><number>0</number></property>
+         <property name="topMargin"><number>0</number></property>
+         <property name="rightMargin"><number>0</number></property>
+         <property name="bottomMargin"><number>0</number></property>
+         <item>
+          <widget class="QTreeWidget" name="outlineTreeWidget">
+           <property name="headerHidden">
+            <bool>true</bool>
+           </property>
+           <property name="alternatingRowColors">
+            <bool>true</bool>
+           </property>
+           <column>
+            <property name="text"><string>标题</string></property>
+           </column>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+
+  <!-- ========== 菜单栏 ========== -->
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect><x>0</x><y>0</y><width>1280</width><height>25</height></rect>
+   </property>
+   <!-- 文件菜单 -->
+   <widget class="QMenu" name="menuFile">
+    <property name="title"><string>文件(&amp;F)</string></property>
+    <addaction name="actionNew"/>
+    <addaction name="actionOpen"/>
+    <addaction name="separator"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionSaveAs"/>
+    <addaction name="separator"/>
+    <addaction name="menuExport"/>
+    <addaction name="separator"/>
+    <addaction name="actionClose"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+    <!-- 导出子菜单 -->
+    <widget class="QMenu" name="menuExport">
+     <property name="title"><string>导出(&amp;E)</string></property>
+     <addaction name="actionExportHTML"/>
+     <addaction name="actionExportPDF"/>
+    </widget>
+   </widget>
+   <!-- 编辑菜单 -->
+   <widget class="QMenu" name="menuEdit">
+    <property name="title"><string>编辑(&amp;E)</string></property>
+    <addaction name="actionUndo"/>
+    <addaction name="actionRedo"/>
+    <addaction name="separator"/>
+    <addaction name="actionCut"/>
+    <addaction name="actionCopy"/>
+    <addaction name="actionPaste"/>
+    <addaction name="separator"/>
+    <addaction name="actionSelectAll"/>
+    <addaction name="separator"/>
+    <addaction name="actionFind"/>
+    <addaction name="actionReplace"/>
+   </widget>
+   <!-- 格式菜单 -->
+   <widget class="QMenu" name="menuFormat">
+    <property name="title"><string>格式(&amp;O)</string></property>
+    <addaction name="actionBold"/>
+    <addaction name="actionItalic"/>
+    <addaction name="actionStrikethrough"/>
+    <addaction name="actionInlineCode"/>
+    <addaction name="separator"/>
+    <addaction name="menuHeading"/>
+    <addaction name="separator"/>
+    <addaction name="actionBulletList"/>
+    <addaction name="actionOrderedList"/>
+    <addaction name="actionTaskList"/>
+    <addaction name="separator"/>
+    <addaction name="actionBlockquote"/>
+    <addaction name="actionCodeBlock"/>
+    <addaction name="actionHorizontalRule"/>
+    <addaction name="separator"/>
+    <addaction name="actionInsertLink"/>
+    <addaction name="actionInsertImage"/>
+    <addaction name="actionInsertTable"/>
+    <!-- 标题子菜单 -->
+    <widget class="QMenu" name="menuHeading">
+     <property name="title"><string>标题</string></property>
+     <addaction name="actionHeading1"/>
+     <addaction name="actionHeading2"/>
+     <addaction name="actionHeading3"/>
+     <addaction name="actionHeading4"/>
+     <addaction name="actionHeading5"/>
+     <addaction name="actionHeading6"/>
+    </widget>
+   </widget>
+   <!-- 视图菜单 -->
+   <widget class="QMenu" name="menuView">
+    <property name="title"><string>视图(&amp;V)</string></property>
+    <addaction name="actionToggleSidebar"/>
+    <addaction name="actionTogglePreview"/>
+    <addaction name="separator"/>
+    <addaction name="actionFocusMode"/>
+    <addaction name="actionFullscreen"/>
+    <addaction name="separator"/>
+    <addaction name="actionZoomIn"/>
+    <addaction name="actionZoomOut"/>
+    <addaction name="actionZoomReset"/>
+   </widget>
+   <!-- 帮助菜单 -->
+   <widget class="QMenu" name="menuHelp">
+    <property name="title"><string>帮助(&amp;H)</string></property>
+    <addaction name="actionShortcuts"/>
+    <addaction name="separator"/>
+    <addaction name="actionAbout"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuFormat"/>
+   <addaction name="menuView"/>
+   <addaction name="menuHelp"/>
+  </widget>
+
+  <!-- ========== 工具栏：文件操作 ========== -->
+  <widget class="QToolBar" name="fileToolBar">
+   <property name="windowTitle"><string>文件工具栏</string></property>
+   <attribute name="toolBarArea"><enum>TopToolBarArea</enum></attribute>
+   <attribute name="breakBefore"><bool>false</bool></attribute>
+   <addaction name="actionNew"/>
+   <addaction name="actionOpen"/>
+   <addaction name="actionSave"/>
+   <addaction name="actionSaveAs"/>
+  </widget>
+
+  <!-- ========== 工具栏：格式化 ========== -->
+  <widget class="QToolBar" name="formatToolBar">
+   <property name="windowTitle"><string>格式工具栏</string></property>
+   <attribute name="toolBarArea"><enum>TopToolBarArea</enum></attribute>
+   <attribute name="breakBefore"><bool>false</bool></attribute>
+   <addaction name="actionBold"/>
+   <addaction name="actionItalic"/>
+   <addaction name="actionStrikethrough"/>
+   <addaction name="actionInlineCode"/>
+   <addaction name="separator"/>
+   <addaction name="actionHeading1"/>
+   <addaction name="actionHeading2"/>
+   <addaction name="actionHeading3"/>
+   <addaction name="separator"/>
+   <addaction name="actionBulletList"/>
+   <addaction name="actionOrderedList"/>
+   <addaction name="actionTaskList"/>
+   <addaction name="actionBlockquote"/>
+   <addaction name="actionCodeBlock"/>
+   <addaction name="separator"/>
+   <addaction name="actionInsertLink"/>
+   <addaction name="actionInsertImage"/>
+   <addaction name="actionInsertTable"/>
+   <addaction name="separator"/>
+   <addaction name="actionToggleSidebar"/>
+   <addaction name="actionTogglePreview"/>
+  </widget>
+
+  <!-- ========== 状态栏 ========== -->
+  <widget class="QStatusBar" name="statusBar"/>
+
+ </widget>
+ <layoutDefault spacing="6" margin="11"/>
+ <pixmapfunction/>
+ <resources>
+  <include location="mde.qrc"/>
+ </resources>
+ <connections/>
+</ui>
