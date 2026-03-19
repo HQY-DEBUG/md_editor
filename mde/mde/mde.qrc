@@ -1,4 +1,29 @@
 <RCC>
-    <qresource prefix="mde">
+    <qresource prefix="/mde">
+    </qresource>
+
+    <qresource prefix="/">
+        <file>icons/new.svg</file>
+        <file>icons/open.svg</file>
+        <file>icons/save.svg</file>
+        <file>icons/save-as.svg</file>
+        <file>icons/bold.svg</file>
+        <file>icons/italic.svg</file>
+        <file>icons/strikethrough.svg</file>
+        <file>icons/inline-code.svg</file>
+        <file>icons/h1.svg</file>
+        <file>icons/h2.svg</file>
+        <file>icons/h3.svg</file>
+        <file>icons/bullet-list.svg</file>
+        <file>icons/ordered-list.svg</file>
+        <file>icons/task-list.svg</file>
+        <file>icons/blockquote.svg</file>
+        <file>icons/code-block.svg</file>
+        <file>icons/link.svg</file>
+        <file>icons/image.svg</file>
+        <file>icons/table.svg</file>
+        <file>icons/horizontal-rule.svg</file>
+        <file>icons/sidebar.svg</file>
+        <file>icons/preview.svg</file>
     </qresource>
 </RCC>

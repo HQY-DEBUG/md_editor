@@ -38,12 +38,12 @@
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
     <QtInstall>5.15.2_msvc2019_64</QtInstall>
-    <QtModules>core;gui;widgets</QtModules>
+    <QtModules>core;gui;widgets;svg</QtModules>
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
     <QtInstall>5.15.2_msvc2019_64</QtInstall>
-    <QtModules>core;gui;widgets</QtModules>
+    <QtModules>core;gui;widgets;svg</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
   <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
@@ -96,8 +96,16 @@
     <QtRcc Include="mde.qrc" />
     <QtUic Include="mde.ui" />
     <QtMoc Include="mde.h" />
+    <QtMoc Include="markdown_highlighter.h" />
+    <QtMoc Include="render_worker.h" />
+    <QtMoc Include="file_worker.h" />
     <ClCompile Include="mde.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="markdown_highlighter.cpp" />
+    <ClCompile Include="render_worker.cpp" />
+    <ClCompile Include="file_worker.cpp" />
+    <ClCompile Include="outline_parser.cpp" />
+    <ClInclude Include="outline_parser.h" />
     <None Include="mde.ico" />
     <ResourceCompile Include="mde.rc" />
   </ItemGroup>
