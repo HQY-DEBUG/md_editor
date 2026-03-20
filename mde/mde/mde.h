@@ -1,12 +1,14 @@
 /*
  * 文件 : mde.h
  * 描述 : MDE 主窗口类定义
- * 版本 : v1.1
+ * 版本 : v1.2
  * 日期 : 2026-03-19
  *
  * 修改记录（最新在前）:
  *  ver  who      date       modification
  * ----- -------  ---------- ---------------------------------
+ * 1.3   dev      26/03/20   新增主题切换：QActionGroup、setup_theme_group、sync_theme_actions
+ * 1.2   dev      26/03/19   代码优化：提取 clear_document、update_outline 参数化、移除冗余调用
  * 1.1   dev      26/03/19   添加完整 UI 实现支持，引入工作线程架构
  * 1.0   dev      26/03/14   创建文件
  */
@@ -15,7 +17,9 @@
 #include <QtWidgets/QMainWindow>
 #include <QThread>
 #include <QTimer>
+#include <QActionGroup>
 #include "ui_mde.h"
+#include "theme_manager.h"
 
 /* 前向声明，减少头文件依赖 */
 class MarkdownHighlighter;
@@ -95,6 +99,9 @@ private slots:
     void onActionShortcuts();
     void onActionAbout();
 
+    // --- 主题切换槽 ---//
+    void onActionThemeTriggered();
+
     // --- 内部协调槽 ---//
     void onEditorTextChanged();           ///< 编辑器内容变化，重置防抖定时器
     void onRenderDebounceTimeout();       ///< 防抖到期，触发渲染和大纲更新
@@ -122,6 +129,10 @@ private:
     void setup_connections();  ///< 连接菜单 action 到对应槽
     void setup_editor();       ///< 编辑器初始设置（高亮、Tab 宽度等）
     void setup_icons();        ///< 为所有 action 和工具栏按钮设置图标
+    void setup_theme_group();  ///< 创建主题 QActionGroup 并加载保存的主题
+
+    // --- 主题辅助 ---//
+    void sync_theme_actions(); ///< 根据当前主题同步 action 勾选状态
 
     // --- 编辑器格式化辅助 ---//
     /**
@@ -144,12 +155,12 @@ private:
     void apply_heading(int level);
 
     // --- 状态管理辅助 ---//
-    void    update_title();          ///< 根据文件名和修改状态刷新窗口标题
-    void    update_outline();        ///< 解析当前内容并刷新大纲树
-    void    update_status_bar();     ///< 刷新状态栏行/列信息
-    void    set_modified(bool val);  ///< 设置修改状态并刷新标题
-    bool    confirm_save();          ///< 若有未保存内容，弹窗询问是否保存；返回是否可以继续
-    void    open_file(const QString &path);
+    void    update_title();                          ///< 根据文件名和修改状态刷新窗口标题
+    void    update_outline(const QString &content); ///< 解析内容并刷新大纲树
+    void    update_status_bar();                     ///< 刷新状态栏行/列信息
+    void    set_modified(bool val);                  ///< 设置修改状态并刷新标题
+    bool    confirm_save();                          ///< 若有未保存内容，弹窗询问是否保存；返回是否可以继续
+    void    clear_document();                        ///< 清空编辑器、重置文件状态
     void    set_editor_content(const QString &content); ///< 静默加载内容（不触发 modified）
 
     // --- 成员变量 ---//
@@ -162,6 +173,7 @@ private:
     QThread             *m_file_thread;   ///< 文件 IO 工作线程
 
     QTimer              *m_render_timer;  ///< 防抖定时器（300 ms）
+    QActionGroup        *m_theme_group;   ///< 主题 action 互斥组
 
     QString              m_current_file;  ///< 当前打开的文件路径，空 = 未命名
     bool                 m_is_modified;   ///< 是否有未保存的修改

@@ -1,27 +1,31 @@
 /*
  * 文件 : markdown_highlighter.cpp
  * 描述 : Markdown 语法高亮器实现
- * 版本 : v1.0
+ * 版本 : v1.1
  * 日期 : 2026-03-19
  *
  * 修改记录（最新在前）:
  *  ver  who      date       modification
  * ----- -------  ---------- ---------------------------------
+ * 1.1   dev      26/03/19   新增代码块语言高亮，改用 CodeBlockData 跨块传递语言信息
  * 1.0   dev      26/03/19   创建文件
  */
 #include "markdown_highlighter.h"
+#include "code_highlighter.h"
 
 #include <QFont>
+#include <QTextBlock>
 
 MarkdownHighlighter::MarkdownHighlighter(QTextDocument *parent)
     : QSyntaxHighlighter(parent)
-    , m_code_block_start(QStringLiteral("^```"))
-    , m_code_block_end(QStringLiteral("^```"))
+    , m_code_fence_re(QStringLiteral("^```"))
 {
     setup_rules();
 }
 
-// --- 初始化 ---//
+// ============================================================
+//  初始化
+// ============================================================
 
 void MarkdownHighlighter::setup_rules()
 {
@@ -59,7 +63,7 @@ void MarkdownHighlighter::setup_rules()
         m_rules.append(rule);
     }
 
-    // --- 行内代码 `code`（优先级高，防止内部再匹配其他规则） ---//
+    // --- 行内代码 `code` ---//
     {
         HighlightRule rule;
         rule.pattern = QRegularExpression(QStringLiteral("`[^`\n]+`"));
@@ -69,7 +73,7 @@ void MarkdownHighlighter::setup_rules()
         m_rules.append(rule);
     }
 
-    // --- 链接 [text](url) ---//
+    // --- 链接 [text](url) 和图片 ![alt](url) ---//
     {
         HighlightRule rule;
         rule.pattern = QRegularExpression(QStringLiteral("!?\\[.*?\\]\\(.*?\\)"));
@@ -120,52 +124,80 @@ void MarkdownHighlighter::setup_rules()
         m_rules.append(rule);
     }
 
-    // --- 代码块标记行（``` 或 ```lang）的格式 ---//
+    // --- 代码块基础格式（等宽字体 + 浅灰背景） ---//
     m_code_block_format.setFontFamily(QStringLiteral("Consolas"));
     m_code_block_format.setForeground(QColor(0x2C, 0x3E, 0x50));
     m_code_block_format.setBackground(QColor(0xEC, 0xF0, 0xF1));
 }
 
-// --- 高亮逻辑 ---//
+// ============================================================
+//  高亮逻辑
+// ============================================================
 
 void MarkdownHighlighter::highlightBlock(const QString &text)
 {
-    // --- 多行代码块处理（状态机：0 = 正常，1 = 代码块内） ---//
     setCurrentBlockState(0);
 
-    int start_index = 0;
-    if (previousBlockState() != 1) {
-        /* 未在代码块内，查找 ``` 起始 */
-        start_index = text.indexOf(m_code_block_start);
-    }
-
-    while (start_index >= 0) {
-        /* 从 ``` 起始后查找结束位置 */
-        QRegularExpressionMatch end_match =
-            m_code_block_end.match(text, start_index + 3);
-
-        int code_len;
-        if (!end_match.hasMatch()) {
-            /* 未找到结束符：本行及后续行均在代码块内 */
-            setCurrentBlockState(1);
-            code_len = text.length() - start_index;
-        } else {
-            code_len = end_match.capturedStart() - start_index
-                       + end_match.capturedLength();
+    /* ── 当前行处于多行代码块内部（前一块状态为 1）── */
+    if (previousBlockState() == 1) {
+        /* 从前一块的用户数据继承语言信息 */
+        QString lang;
+        if (auto *prev_data = static_cast<CodeBlockData *>(
+                currentBlock().previous().userData())) {
+            lang = prev_data->language;
         }
 
-        setFormat(start_index, code_len, m_code_block_format);
-        start_index = text.indexOf(m_code_block_start, start_index + code_len);
-    }
+        /* 将语言信息附到当前块，供下一行继续继承 */
+        auto *data = new CodeBlockData();
+        data->language = lang;
+        setCurrentBlockUserData(data);
 
-    /* 若整行处于代码块内，直接设置格式后返回，不再匹配其他规则 */
-    if (previousBlockState() == 1) {
+        if (m_code_fence_re.match(text).hasMatch()) {
+            /* 代码块结束围栏行（```） */
+            setFormat(0, text.length(), m_code_block_format);
+            setCurrentBlockState(0);
+            return;
+        }
+
+        /* 仍在代码块内：先应用基础格式（背景+字体），再叠加语言高亮 */
+        setCurrentBlockState(1);
         setFormat(0, text.length(), m_code_block_format);
+        highlight_code(text, lang);
         return;
     }
 
-    // --- 按顺序应用单行高亮规则 ---//
+    /* ── 检测代码块开始围栏行（行首 ```[lang]）── */
+    if (m_code_fence_re.match(text).hasMatch()) {
+        /* 提取语言标识符（取第一个词，小写规范化） */
+        QString raw = text.mid(3).trimmed().toLower();
+        const int sp = raw.indexOf(QLatin1Char(' '));
+        if (sp > 0) raw = raw.left(sp);
+
+        auto *data = new CodeBlockData();
+        data->language = CodeHighlighter::normalize(raw);
+        setCurrentBlockUserData(data);
+
+        setFormat(0, text.length(), m_code_block_format);
+        setCurrentBlockState(1);
+        return;
+    }
+
+    /* ── 普通 Markdown 行：按顺序应用单行规则 ── */
     for (const HighlightRule &rule : m_rules) {
+        QRegularExpressionMatchIterator it = rule.pattern.globalMatch(text);
+        while (it.hasNext()) {
+            QRegularExpressionMatch match = it.next();
+            setFormat(match.capturedStart(), match.capturedLength(), rule.format);
+        }
+    }
+}
+
+void MarkdownHighlighter::highlight_code(const QString &text, const QString &lang)
+{
+    if (lang.isEmpty()) return;
+
+    const QVector<CodeRule> &rules = CodeHighlighter::rules_for(lang);
+    for (const CodeRule &rule : rules) {
         QRegularExpressionMatchIterator it = rule.pattern.globalMatch(text);
         while (it.hasNext()) {
             QRegularExpressionMatch match = it.next();

@@ -1,12 +1,13 @@
 /*
  * 文件 : file_worker.h
  * 描述 : 文件读写工作对象（运行于独立 QThread）
- * 版本 : v1.0
+ * 版本 : v1.1
  * 日期 : 2026-03-19
  *
  * 修改记录（最新在前）:
  *  ver  who      date       modification
  * ----- -------  ---------- ---------------------------------
+ * 1.1   dev      26/03/19   提取 write_text_file 私有辅助消除重复写文件逻辑
  * 1.0   dev      26/03/19   创建文件
  */
 #pragma once
@@ -72,4 +73,15 @@ signals:
      * @param msg 错误描述（供主窗口弹窗提示）
      */
     void errorOccurred(const QString &msg);
+
+private:
+    /**
+     * @brief 将文本内容以 UTF-8 编码写入文件（内部复用辅助）
+     * @param path         目标文件路径
+     * @param content      要写入的文本
+     * @param error_prefix 错误消息前缀（如 "无法保存文件："）
+     * @return 写入成功返回 true，否则 emit errorOccurred 并返回 false
+     */
+    bool write_text_file(const QString &path, const QString &content,
+                         const QString &error_prefix);
 };

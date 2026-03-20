@@ -219,6 +219,25 @@
    <property name="shortcut"><string>Ctrl+0</string></property>
   </action>
 
+  <!-- ========== Actions：主题 ========== -->
+  <action name="actionThemeLight">
+   <property name="text"><string>亮色（默认）</string></property>
+   <property name="checkable"><bool>true</bool></property>
+   <property name="checked"><bool>true</bool></property>
+  </action>
+  <action name="actionThemeDark">
+   <property name="text"><string>暗色</string></property>
+   <property name="checkable"><bool>true</bool></property>
+  </action>
+  <action name="actionThemeSepia">
+   <property name="text"><string>护眼米黄</string></property>
+   <property name="checkable"><bool>true</bool></property>
+  </action>
+  <action name="actionThemeHighContrast">
+   <property name="text"><string>高对比度</string></property>
+   <property name="checkable"><bool>true</bool></property>
+  </action>
+
   <!-- ========== Actions：帮助 ========== -->
   <action name="actionShortcuts">
    <property name="text"><string>快捷键说明</string></property>
@@ -452,6 +471,16 @@
     <addaction name="actionZoomIn"/>
     <addaction name="actionZoomOut"/>
     <addaction name="actionZoomReset"/>
+    <addaction name="separator"/>
+    <addaction name="menuTheme"/>
+    <!-- 主题子菜单 -->
+    <widget class="QMenu" name="menuTheme">
+     <property name="title"><string>主题配色</string></property>
+     <addaction name="actionThemeLight"/>
+     <addaction name="actionThemeDark"/>
+     <addaction name="actionThemeSepia"/>
+     <addaction name="actionThemeHighContrast"/>
+    </widget>
    </widget>
    <!-- 帮助菜单 -->
    <widget class="QMenu" name="menuHelp">

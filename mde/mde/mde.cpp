@@ -1,12 +1,14 @@
 /*
  * 文件 : mde.cpp
  * 描述 : MDE 主窗口实现
- * 版本 : v1.1
+ * 版本 : v1.2
  * 日期 : 2026-03-19
  *
  * 修改记录（最新在前）:
  *  ver  who      date       modification
  * ----- -------  ---------- ---------------------------------
+ * 1.3   dev      26/03/20   新增主题切换功能（亮色/暗色/护眼/高对比度），注入预览 CSS
+ * 1.2   dev      26/03/19   优化：提取 clear_document、update_outline 参数化避免二次读取、blockSignals 替换 disconnect/connect、图标设置数据驱动
  * 1.1   dev      26/03/19   实现完整 UI 交互逻辑及工作线程协调
  * 1.0   dev      26/03/14   创建文件
  */
@@ -41,6 +43,7 @@ mde::mde(QWidget *parent)
     , m_file_worker(nullptr)
     , m_file_thread(nullptr)
     , m_render_timer(nullptr)
+    , m_theme_group(nullptr)
     , m_is_modified(false)
     , m_base_font_size(12)
 {
@@ -50,6 +53,7 @@ mde::mde(QWidget *parent)
     setup_editor();
     setup_connections();
     setup_icons();
+    setup_theme_group();   /* 2026-03-20 新增：加载并应用保存的主题 */
 
     update_title();
     statusBar()->showMessage(QStringLiteral("就绪"));
@@ -136,6 +140,11 @@ void mde::setup_workers()
 
 void mde::setup_editor()
 {
+    /* 隐藏侧边栏 Dock 的标题条（固定高度 0 彻底消除占位） */
+    auto *empty_title = new QWidget(this);
+    empty_title->setFixedHeight(0);
+    ui->sidebarDock->setTitleBarWidget(empty_title);
+
     /* 挂载语法高亮器到编辑器的 QTextDocument */
     m_highlighter = new MarkdownHighlighter(ui->editorWidget->document());
 
@@ -213,6 +222,12 @@ void mde::setup_connections()
     // --- 侧边栏 Dock 被用户手动关闭时同步 action 状态 ---//
     connect(ui->sidebarDock, &QDockWidget::visibilityChanged,
             ui->actionToggleSidebar, &QAction::setChecked);
+
+    // --- 主题菜单 ---//
+    connect(ui->actionThemeLight,        &QAction::triggered, this, &mde::onActionThemeTriggered);
+    connect(ui->actionThemeDark,         &QAction::triggered, this, &mde::onActionThemeTriggered);
+    connect(ui->actionThemeSepia,        &QAction::triggered, this, &mde::onActionThemeTriggered);
+    connect(ui->actionThemeHighContrast, &QAction::triggered, this, &mde::onActionThemeTriggered);
 }
 
 // ============================================================
@@ -222,10 +237,7 @@ void mde::setup_connections()
 void mde::onActionNew()
 {
     if (!confirm_save()) return;
-    set_editor_content(QString());
-    m_current_file.clear();
-    set_modified(false);
-    update_title();
+    clear_document();
 }
 
 void mde::onActionOpen()
@@ -239,7 +251,7 @@ void mde::onActionOpen()
         QStringLiteral("Markdown 文件 (*.md *.markdown);;所有文件 (*)")
     );
     if (!path.isEmpty()) {
-        open_file(path);
+        emit requestLoadFile(path);
     }
 }
 
@@ -268,10 +280,7 @@ void mde::onActionSaveAs()
 void mde::onActionClose()
 {
     if (!confirm_save()) return;
-    set_editor_content(QString());
-    m_current_file.clear();
-    set_modified(false);
-    update_title();
+    clear_document();
 }
 
 void mde::onActionExit()
@@ -516,6 +525,52 @@ void mde::onActionAbout()
 }
 
 // ============================================================
+//  主题
+// ============================================================
+
+void mde::setup_theme_group()
+{
+    /* QActionGroup 保证四个主题 action 互斥勾选 */
+    m_theme_group = new QActionGroup(this);
+    m_theme_group->setExclusive(true);
+    m_theme_group->addAction(ui->actionThemeLight);
+    m_theme_group->addAction(ui->actionThemeDark);
+    m_theme_group->addAction(ui->actionThemeSepia);
+    m_theme_group->addAction(ui->actionThemeHighContrast);
+
+    ThemeManager::load_saved();
+    sync_theme_actions();
+}
+
+void mde::onActionThemeTriggered()
+{
+    const QAction *src = qobject_cast<QAction *>(sender());
+    if (!src) return;
+
+    Theme theme = Theme::Light;
+    if      (src == ui->actionThemeDark)         theme = Theme::Dark;
+    else if (src == ui->actionThemeSepia)        theme = Theme::Sepia;
+    else if (src == ui->actionThemeHighContrast) theme = Theme::HighContrast;
+
+    ThemeManager::apply(theme);
+    sync_theme_actions();
+
+    /* 立即用新主题重新渲染预览 */
+    const QString content = ui->editorWidget->toPlainText();
+    if (!content.isEmpty())
+        emit requestRender(content);
+}
+
+void mde::sync_theme_actions()
+{
+    const Theme t = ThemeManager::current();
+    ui->actionThemeLight->setChecked(t == Theme::Light);
+    ui->actionThemeDark->setChecked(t == Theme::Dark);
+    ui->actionThemeSepia->setChecked(t == Theme::Sepia);
+    ui->actionThemeHighContrast->setChecked(t == Theme::HighContrast);
+}
+
+// ============================================================
 //  内部协调槽
 // ============================================================
 
@@ -531,8 +586,8 @@ void mde::onEditorTextChanged()
 void mde::onRenderDebounceTimeout()
 {
     const QString content = ui->editorWidget->toPlainText();
-    emit requestRender(content);  /* 发送给渲染工作线程 */
-    update_outline();             /* 大纲解析足够快，直接在 GUI 线程执行 */
+    emit requestRender(content);     /* 发送给渲染工作线程 */
+    update_outline(content);         /* 大纲解析足够快，直接在 GUI 线程执行 */
 }
 
 void mde::onCursorPositionChanged()
@@ -544,7 +599,12 @@ void mde::onRenderFinished(const QString &html)
 {
     /* 保存滚动位置，避免更新 HTML 后预览区跳回顶部 */
     const int scroll_pos = ui->previewWidget->verticalScrollBar()->value();
-    ui->previewWidget->setHtml(html);
+    /* 2026-03-20 新增：注入主题 CSS，使预览区配色与编辑器保持一致 */
+    const QString styled = QStringLiteral("<style>")
+                         + ThemeManager::preview_css()
+                         + QStringLiteral("</style>")
+                         + html;
+    ui->previewWidget->setHtml(styled);
     ui->previewWidget->verticalScrollBar()->setValue(scroll_pos);
 }
 
@@ -552,16 +612,14 @@ void mde::onFileLoaded(const QString &content, const QString &path)
 {
     set_editor_content(content);
     m_current_file = path;
-    set_modified(false);
-    update_title();
+    set_modified(false);   /* set_modified 已调用 update_title */
     statusBar()->showMessage(QStringLiteral("已打开：") + path, 3000);
 }
 
 void mde::onFileSaved(const QString &path)
 {
     m_current_file = path;
-    set_modified(false);
-    update_title();
+    set_modified(false);   /* set_modified 已调用 update_title */
     statusBar()->showMessage(QStringLiteral("已保存：") + path, 3000);
 }
 
@@ -655,10 +713,9 @@ void mde::update_title()
                    + QStringLiteral(" - MDE"));
 }
 
-void mde::update_outline()
+void mde::update_outline(const QString &content)
 {
-    const QList<OutlineItem> items =
-        OutlineParser::parse(ui->editorWidget->toPlainText());
+    const QList<OutlineItem> items = OutlineParser::parse(content);
 
     ui->outlineTreeWidget->clear();
 
@@ -730,60 +787,56 @@ bool mde::confirm_save()
     return btn == QMessageBox::Discard;
 }
 
-void mde::open_file(const QString &path)
+void mde::clear_document()
 {
-    emit requestLoadFile(path);
+    set_editor_content(QString());
+    m_current_file.clear();
+    set_modified(false);   /* set_modified 已调用 update_title */
 }
 
 void mde::setup_icons()
 {
-    // --- 文件操作图标 ---//
-    ui->actionNew->setIcon(QIcon(QStringLiteral(":/icons/new.svg")));
-    ui->actionOpen->setIcon(QIcon(QStringLiteral(":/icons/open.svg")));
-    ui->actionSave->setIcon(QIcon(QStringLiteral(":/icons/save.svg")));
-    ui->actionSaveAs->setIcon(QIcon(QStringLiteral(":/icons/save-as.svg")));
-
-    // --- 格式化图标 ---//
-    ui->actionBold->setIcon(QIcon(QStringLiteral(":/icons/bold.svg")));
-    ui->actionItalic->setIcon(QIcon(QStringLiteral(":/icons/italic.svg")));
-    ui->actionStrikethrough->setIcon(QIcon(QStringLiteral(":/icons/strikethrough.svg")));
-    ui->actionInlineCode->setIcon(QIcon(QStringLiteral(":/icons/inline-code.svg")));
-
-    ui->actionHeading1->setIcon(QIcon(QStringLiteral(":/icons/h1.svg")));
-    ui->actionHeading2->setIcon(QIcon(QStringLiteral(":/icons/h2.svg")));
-    ui->actionHeading3->setIcon(QIcon(QStringLiteral(":/icons/h3.svg")));
-
-    ui->actionBulletList->setIcon(QIcon(QStringLiteral(":/icons/bullet-list.svg")));
-    ui->actionOrderedList->setIcon(QIcon(QStringLiteral(":/icons/ordered-list.svg")));
-    ui->actionTaskList->setIcon(QIcon(QStringLiteral(":/icons/task-list.svg")));
-    ui->actionBlockquote->setIcon(QIcon(QStringLiteral(":/icons/blockquote.svg")));
-    ui->actionCodeBlock->setIcon(QIcon(QStringLiteral(":/icons/code-block.svg")));
-
-    ui->actionInsertLink->setIcon(QIcon(QStringLiteral(":/icons/link.svg")));
-    ui->actionInsertImage->setIcon(QIcon(QStringLiteral(":/icons/image.svg")));
-    ui->actionInsertTable->setIcon(QIcon(QStringLiteral(":/icons/table.svg")));
-    ui->actionHorizontalRule->setIcon(QIcon(QStringLiteral(":/icons/horizontal-rule.svg")));
-
-    // --- 视图图标 ---//
-    ui->actionToggleSidebar->setIcon(QIcon(QStringLiteral(":/icons/sidebar.svg")));
-    ui->actionTogglePreview->setIcon(QIcon(QStringLiteral(":/icons/preview.svg")));
+    struct IconEntry { QAction *action; const char *path; };
+    const IconEntry entries[] = {
+        { ui->actionNew,            ":/icons/new.svg"            },
+        { ui->actionOpen,           ":/icons/open.svg"           },
+        { ui->actionSave,           ":/icons/save.svg"           },
+        { ui->actionSaveAs,         ":/icons/save-as.svg"        },
+        { ui->actionBold,           ":/icons/bold.svg"           },
+        { ui->actionItalic,         ":/icons/italic.svg"         },
+        { ui->actionStrikethrough,  ":/icons/strikethrough.svg"  },
+        { ui->actionInlineCode,     ":/icons/inline-code.svg"    },
+        { ui->actionHeading1,       ":/icons/h1.svg"             },
+        { ui->actionHeading2,       ":/icons/h2.svg"             },
+        { ui->actionHeading3,       ":/icons/h3.svg"             },
+        { ui->actionBulletList,     ":/icons/bullet-list.svg"    },
+        { ui->actionOrderedList,    ":/icons/ordered-list.svg"   },
+        { ui->actionTaskList,       ":/icons/task-list.svg"      },
+        { ui->actionBlockquote,     ":/icons/blockquote.svg"     },
+        { ui->actionCodeBlock,      ":/icons/code-block.svg"     },
+        { ui->actionInsertLink,     ":/icons/link.svg"           },
+        { ui->actionInsertImage,    ":/icons/image.svg"          },
+        { ui->actionInsertTable,    ":/icons/table.svg"          },
+        { ui->actionHorizontalRule, ":/icons/horizontal-rule.svg"},
+        { ui->actionToggleSidebar,  ":/icons/sidebar.svg"        },
+        { ui->actionTogglePreview,  ":/icons/preview.svg"        },
+    };
+    for (const IconEntry &e : entries) {
+        e.action->setIcon(QIcon(QString::fromLatin1(e.path)));
+    }
 }
 
 void mde::set_editor_content(const QString &content)
 {
-    /* 断开 textChanged 信号，避免设置内容时误触发 modified 标记 */
-    disconnect(ui->editorWidget, &QPlainTextEdit::textChanged,
-               this,             &mde::onEditorTextChanged);
-
+    /* 屏蔽 textChanged 信号，避免设置内容时误触发 modified 标记 */
+    ui->editorWidget->blockSignals(true);
     ui->editorWidget->setPlainText(content);
-
-    connect(ui->editorWidget, &QPlainTextEdit::textChanged,
-            this,             &mde::onEditorTextChanged);
+    ui->editorWidget->blockSignals(false);
 
     /* 内容加载完成后立即触发一次渲染 */
     if (!content.isEmpty()) {
         emit requestRender(content);
-        update_outline();
+        update_outline(content);
     } else {
         ui->previewWidget->clear();
         ui->outlineTreeWidget->clear();

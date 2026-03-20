@@ -105,7 +105,11 @@
     <ClCompile Include="render_worker.cpp" />
     <ClCompile Include="file_worker.cpp" />
     <ClCompile Include="outline_parser.cpp" />
+    <ClCompile Include="code_highlighter.cpp" />
+    <ClCompile Include="theme_manager.cpp" />
     <ClInclude Include="outline_parser.h" />
+    <ClInclude Include="code_highlighter.h" />
+    <ClInclude Include="theme_manager.h" />
     <None Include="mde.ico" />
     <ResourceCompile Include="mde.rc" />
   </ItemGroup>
